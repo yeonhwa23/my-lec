@@ -1,5 +1,6 @@
+
 import { createRouter, createWebHistory } from 'vue-router'
-  import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from '@/stores/authStore'
 
 import HomeView from '@/views/HomeView.vue'
 
@@ -7,7 +8,7 @@ const routes = [
   { path: '/', name: 'Home', component: HomeView },
   { path: '/about', name: 'About', component: () => import('@/views/AboutView.vue') },
   { path: '/login', name: 'Login', component: () => import('@/views/member/LoginView.vue') },
-  { path: '/signup', name: 'Signup', component: () => import('@/views/member/SignupView.vue') },  
+  { path: '/signup', name: 'Signup', component: () => import('@/views/member/SignupView.vue') },
   { path: '/:catchAll(.*)', name: 'NotFound', component: () => import('@/views/error/NotFound.vue') },
 
   // 로그인이 필요한 메뉴
@@ -30,6 +31,28 @@ const routes = [
   { path: '/album', name: 'Album', component: () => import('@/views/mypage/AlbumView.vue'), meta: { requiresAuth: true } },
   { path: '/schedule', name: 'Schedule', component: () => import('@/views/mypage/ScheduleView.vue'), meta: { requiresAuth: true } },
   { path: '/note', name: 'Note', component: () => import('@/views/mypage/NoteView.vue'), meta: { requiresAuth: true } },
+
+  // ── ✅ 워크스페이스 (Weave) ─────────────────────────────────────
+  {
+    path: '/ws/:slug',
+    name: 'workspace',
+    component: () => import('@/views/workspace/WorkspaceView.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: 'ch/:channelId',
+        name: 'channel',
+        component: () => import('@/views/channel/ChatView.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: 'page/:pageId',
+        name: 'page-editor',
+        component: () => import('@/views/page/PageEditorView.vue'),
+        meta: { requiresAuth: true },
+      },
+    ],
+  },
 ]
 
 const router = createRouter({
@@ -37,22 +60,19 @@ const router = createRouter({
   routes
 })
 
-// 네비게이션 가드 설정
+// 네비게이션 가드 설정 (기존 그대로)
 router.beforeEach((to, from, next) => {
-    const authStore = useAuthStore();
+  const authStore = useAuthStore()
 
-    // 이동할 페이지가 인증을 필요하는 경우
-    if (to.meta.requiresAuth) {
-        // 로그인 상태(토큰 존재 여부) 확인
-        if (!authStore.auth.token) {
-            // 로그인 페이지로 이동 (가려던 주소를 query로 넘기면 로그인 후 복귀 가능)
-            next({ name: 'Login', query: { redirect: to.fullPath } });
-        } else {
-            next(); // 로그인 되어 있으면 통과
-        }
+  if (to.meta.requiresAuth) {
+    if (!authStore.auth.token) {
+      next({ name: 'Login', query: { redirect: to.fullPath } })
     } else {
-        next(); // 인증이 필요 없는 페이지는 무조건 통과
+      next()
     }
-});
+  } else {
+    next()
+  }
+})
 
 export default router
