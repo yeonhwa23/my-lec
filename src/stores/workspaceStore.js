@@ -32,10 +32,14 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   async function fetchMyWorkspaces() {
     loading.value = true
     try {
-      const { data } = await workspaceApi.getMyList()
-      workspaceList.value = data
+      // ✅ 중괄호 제거 완료
+      const data = await workspaceApi.getMyList()
+      // data가 없으면(null/undefined) 빈 배열로 덮어쓰기
+      workspaceList.value = data || [] 
     } catch (e) {
       console.error('[workspaceStore] 목록 조회 실패', e)
+      // 에러가 났을 때도 undefined가 되지 않게 빈 배열로 리셋
+      workspaceList.value = [] 
     } finally {
       loading.value = false
     }
@@ -46,7 +50,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
    * 성공 시 목록에 추가하고 해당 워크스페이스로 입장 처리
    */
   async function createWorkspace(formData) {
-    const { data } = await workspaceApi.create(formData)
+    // ✅ 중괄호 제거 완료
+    const data = await workspaceApi.create(formData)
     workspaceList.value.unshift(data)   // 목록 맨 앞에 추가
     setCurrentWorkspace(data)
     return data
@@ -57,15 +62,23 @@ export const useWorkspaceStore = defineStore('workspace', () => {
    * @returns {Promise<boolean>} true: 사용 가능
    */
   async function checkSlug(slug) {
-    const { data } = await workspaceApi.checkSlug(slug)
-    return data.available
+    try {
+      // ✅ 중괄호 제거 완료
+      const data = await workspaceApi.checkSlug(slug)
+      return data.available
+    } catch (error) {
+      console.error('[workspaceStore] 슬러그 중복 확인 실패:', error)
+      // 서버 에러(502 등)가 나면 일단 사용 불가능한 것으로 안전하게 처리
+      return false 
+    }
   }
 
   /**
    * 초대 링크(슬러그)로 참여
    */
   async function joinBySlug(slug) {
-    const { data } = await workspaceApi.joinBySlug(slug)
+    // ✅ 중괄호 제거 완료
+    const data = await workspaceApi.joinBySlug(slug)
     // 이미 목록에 없으면 추가
     const exists = workspaceList.value.some(w => w.workspaceId === data.workspaceId)
     if (!exists) workspaceList.value.push(data)
@@ -85,7 +98,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
    * 멤버 목록 조회
    */
   async function fetchMembers(workspaceId) {
-    const { data } = await workspaceApi.getMembers(workspaceId)
+    // ✅ 중괄호 제거 완료
+    const data = await workspaceApi.getMembers(workspaceId)
     memberList.value = data
   }
 

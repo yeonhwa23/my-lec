@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@popperjs/core": "^2.11.8",
+    "@stomp/stompjs": "^7.3.0",
     "@vueup/vue-quill": "^1.2.0",
     "aos": "^2.3.4",
     "axios": "^1.14.0",

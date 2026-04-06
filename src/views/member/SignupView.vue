@@ -40,24 +40,11 @@
           <p>이미 계정이 있으신가요? <router-link to="/login">로그인 →</router-link></p>
         </div>
 
-        <div class="sf-social">
-          <button class="sf-soc google">
-            <svg width="17" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-            Google로 가입
-          </button>
-          <button class="sf-soc kakao">
-            <svg width="17" viewBox="0 0 24 24"><path fill="#3C1E1E" d="M12 3C6.477 3 2 6.477 2 10.8c0 2.72 1.65 5.12 4.13 6.56l-1.05 3.9 4.56-2.97c.76.1 1.54.16 2.36.16 5.523 0 10-3.477 10-7.65C22 6.477 17.523 3 12 3z"/></svg>
-            카카오로 가입
-          </button>
-        </div>
-
-        <div class="sf-or"><span></span><em>또는 직접 가입</em><span></span></div>
-
         <form @submit.prevent="handleSignup" novalidate>
           <div class="sf-row">
             <div class="fg" :class="{'fg-err':errors.name,'fg-ok':valid.name}">
-              <label>이름</label>
-              <div class="fg-box"><i class="bi bi-person fg-ico"></i><input type="text" v-model="form.name" @blur="validateName" placeholder="홍길동" autocomplete="name" /><i class="bi bi-check-circle-fill fg-ck" v-if="valid.name"></i></div>
+              <label>닉네임</label>
+              <div class="fg-box"><i class="bi bi-person fg-ico"></i><input type="text" v-model="form.name" @blur="validateName" placeholder="홍길동" autocomplete="nickname" /><i class="bi bi-check-circle-fill fg-ck" v-if="valid.name"></i></div>
               <span class="fe" v-if="errors.name">{{ errors.name }}</span>
             </div>
             <div class="fg" :class="{'fg-err':errors.login_id,'fg-ok':valid.login_id}">
@@ -68,12 +55,43 @@
             </div>
           </div>
 
-          <div class="fg" :class="{'fg-err':errors.email,'fg-ok':valid.email}">
-            <label>이메일</label>
-            <div class="fg-box"><i class="bi bi-envelope fg-ico"></i><input type="email" v-model="form.email" @blur="validateEmail" placeholder="example@email.com" autocomplete="email" /><i class="bi bi-check-circle-fill fg-ck" v-if="valid.email"></i></div>
-            <span class="fe" v-if="errors.email">{{ errors.email }}</span>
+          <div class="sf-row">
+            <div class="fg">
+              <label>생년월일</label>
+              <div class="fg-box"><i class="bi bi-calendar fg-ico"></i><input type="date" v-model="form.birth" /></div>
+            </div>
+            <div class="fg">
+              <label>전화번호</label>
+              <div class="fg-box"><i class="bi bi-phone fg-ico"></i><input type="tel" v-model="form.tel" placeholder="010-0000-0000" /></div>
+            </div>
           </div>
 
+          <div class="sf-row">
+            <div class="fg">
+              <label>우편번호</label>
+              <div class="fg-box fg-btn">
+                <i class="bi bi-mailbox fg-ico"></i>
+                <input type="text" v-model="form.zip" placeholder="우편번호" readonly @click="openPostcode" style="cursor: pointer;" />
+                <button type="button" class="fg-dup" @click="openPostcode">주소찾기</button>
+              </div>
+            </div>
+            <div class="fg">
+              <label>이메일</label>
+              <div class="fg-box"><i class="bi bi-envelope fg-ico"></i><input type="email" v-model="form.email" @blur="validateEmail" placeholder="example@email.com" autocomplete="email" /><i class="bi bi-check-circle-fill fg-ck" v-if="valid.email"></i></div>
+              <span class="fe" v-if="errors.email">{{ errors.email }}</span>
+            </div>
+          </div>
+          
+          <div class="sf-row">
+            <div class="fg">
+              <label>기본주소</label>
+              <div class="fg-box"><i class="bi bi-house fg-ico"></i><input type="text" v-model="form.addr1" placeholder="주소찾기를 클릭하세요" readonly @click="openPostcode" style="cursor: pointer;" /></div>
+            </div>
+            <div class="fg">
+              <label>상세주소</label>
+              <div class="fg-box"><i class="bi bi-house-add fg-ico"></i><input type="text" id="addr2Input" v-model="form.addr2" placeholder="101동 101호" /></div>
+            </div>
+          </div>
           <div class="fg" :class="{'fg-err':errors.password,'fg-ok':valid.password}">
             <label>비밀번호</label>
             <div class="fg-box"><i class="bi bi-lock fg-ico"></i><input :type="showPw?'text':'password'" v-model="form.password" @input="validatePassword" placeholder="8자 이상" autocomplete="new-password" /><button type="button" class="fg-eye" @click="showPw=!showPw"><i :class="showPw?'bi bi-eye-slash':'bi bi-eye'"></i></button></div>
@@ -110,11 +128,32 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import http from '@/util/http'
 
 const router = useRouter(); const mounted = ref(false)
-onMounted(() => setTimeout(() => mounted.value = true, 80))
-const form = ref({ name:'',login_id:'',email:'',password:'',passwordConfirm:'',agree:false })
+
+// ✅ 컴포넌트가 마운트될 때 다음 우편번호 API 스크립트를 동적으로 불러옵니다.
+onMounted(() => {
+  setTimeout(() => mounted.value = true, 80);
+  const script = document.createElement('script');
+  script.src = "//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
+  document.head.appendChild(script);
+})
+
+const form = ref({ 
+  name: '', 
+  login_id: '', 
+  email: '', 
+  password: '', 
+  passwordConfirm: '',
+  birth: '', 
+  tel: '',   
+  zip: '',   
+  addr1: '', 
+  addr2: '', 
+  agree: false 
+})
+
 const errors = ref({}); const valid = ref({})
 const apiError = ref(''); const apiSuccess = ref('')
 const loading = ref(false); const showPw = ref(false); const showPw2 = ref(false)
@@ -125,7 +164,8 @@ const pwStrength = computed(() => {
   if (pw.length >= 8) s++; if (/[A-Z]/.test(pw)) s++; if (/[0-9]/.test(pw)) s++; if (/[^A-Za-z0-9]/.test(pw)) s++
   return [{ pct:25, color:'#F87171', label:'매우 약함' },{ pct:50, color:'#FBBF24', label:'약함' },{ pct:75, color:'#FCD34D', label:'보통' },{ pct:100, color:'#4ADE80', label:'강함' }][s-1] || { pct:25, color:'#F87171', label:'매우 약함' }
 })
-const validateName = () => { if (!form.value.name.trim()) { errors.value.name='이름을 입력해주세요.'; valid.value.name=false } else { errors.value.name=''; valid.value.name=true } }
+
+const validateName = () => { if (!form.value.name.trim()) { errors.value.name='닉네임을 입력해주세요.'; valid.value.name=false } else { errors.value.name=''; valid.value.name=true } }
 const validateEmail = () => {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!form.value.email) { errors.value.email='이메일을 입력해주세요.'; valid.value.email=false }
@@ -134,24 +174,73 @@ const validateEmail = () => {
 }
 const validatePassword = () => { if (form.value.password.length < 8) { errors.value.password='8자 이상이어야 합니다.'; valid.value.password=false } else { errors.value.password=''; valid.value.password=true } }
 const validatePasswordConfirm = () => { if (form.value.password !== form.value.passwordConfirm) { errors.value.passwordConfirm='비밀번호가 일치하지 않습니다.'; valid.value.passwordConfirm=false } else if (form.value.passwordConfirm) { errors.value.passwordConfirm=''; valid.value.passwordConfirm=true } }
+
 const checkId = async () => {
   if (!form.value.login_id.trim()) { errors.value.login_id='아이디를 입력해주세요.'; valid.value.login_id=false; return }
-  try { const r = await axios.get(`/api/userIdCheck?login_id=${form.value.login_id}`); if (r.data.exists) { errors.value.login_id='이미 사용 중인 아이디입니다.'; valid.value.login_id=false } else { errors.value.login_id=''; valid.value.login_id=true } }
+  try { 
+    const r = await http.get(`/userIdCheck?login_id=${form.value.login_id}`); 
+    if (r.exists) { errors.value.login_id='이미 사용 중인 아이디입니다.'; valid.value.login_id=false } 
+    else { errors.value.login_id=''; valid.value.login_id=true } 
+  }
   catch { errors.value.login_id='확인 중 오류가 발생했습니다.' }
 }
+
+// ✅ 다음 우편번호 API 실행 함수
+const openPostcode = () => {
+  new window.daum.Postcode({
+    oncomplete: (data) => {
+      // 도로명 주소의 노출 규칙에 따라 주소를 표시
+      let addr = '';
+      if (data.userSelectedType === 'R') {
+        addr = data.roadAddress; // 도로명 주소
+      } else {
+        addr = data.jibunAddress; // 지번 주소
+      }
+
+      // 우편번호와 기본 주소를 Vue 상태(form)에 저장
+      form.value.zip = data.zonecode;
+      form.value.addr1 = addr;
+
+      // 주소 선택이 완료되면 상세주소 입력칸으로 포커스 이동 (사용성 향상)
+      const addr2Input = document.getElementById('addr2Input');
+      if(addr2Input) addr2Input.focus();
+    }
+  }).open();
+}
+
 const handleSignup = async () => {
   validateName(); validateEmail(); validatePassword(); validatePasswordConfirm()
   if (!form.value.agree) errors.value.agree='약관에 동의해주세요.'; else errors.value.agree=''
   if (Object.values(errors.value).some(e=>e) || !valid.value.login_id) return
+  
   loading.value=true; apiError.value=''; apiSuccess.value=''
-  try { await axios.post('/api/signup',{login_id:form.value.login_id,password:form.value.password,name:form.value.name,email:form.value.email}); apiSuccess.value='가입 완료! 로그인 페이지로 이동합니다.'; setTimeout(()=>router.push('/login'),1800) }
-  catch(e) { apiError.value=e.response?.data?.message||'회원가입 중 오류가 발생했습니다.' }
-  finally { loading.value=false }
+  
+  try { 
+    await http.post('/signup', {
+      login_id: form.value.login_id,
+      password: form.value.password,
+      name: form.value.name,
+      email: form.value.email,
+      birth: form.value.birth,
+      tel: form.value.tel,
+      zip: form.value.zip,
+      addr1: form.value.addr1,
+      addr2: form.value.addr2
+    }); 
+    apiSuccess.value='가입 완료! 로그인 페이지로 이동합니다.'; 
+    setTimeout(()=>router.push('/login'), 1800) 
+  } catch(e) { 
+    apiError.value = e.response?.data?.message || '회원가입 중 오류가 발생했습니다.' 
+  } finally { 
+    loading.value = false 
+  }
 }
 </script>
-
 <style scoped>
-.sv { display:flex;min-height:100vh;font-family:"Pretendard",sans-serif; }
+/* ──────────────────────────────────────────────────────────
+   🚨 화면 깨짐 완벽 수정! 스크롤 & 폼 레이아웃 복구 
+   ────────────────────────────────────────────────────────── */
+.sv { display:flex; height:100vh; font-family:"Pretendard",sans-serif; overflow: hidden; }
 
 .sv-left { flex:0 0 440px;position:relative;overflow:hidden; }
 @media (max-width:980px) { .sv-left { display:none; } }
@@ -190,10 +279,24 @@ const handleSignup = async () => {
 .sl-pulse { position:absolute;top:14px;right:14px;width:9px;height:9px;border-radius:50%;background:#4ADE80;animation:pulse 2.2s infinite; }
 @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(74,222,128,0.5)} 70%{box-shadow:0 0 0 9px rgba(74,222,128,0)} 100%{box-shadow:0 0 0 0 rgba(74,222,128,0)} }
 
-/* 우측 */
-.sv-right { flex:1;background:#0C0B1A;display:flex;align-items:center;justify-content:center;padding:48px 24px;overflow-y:auto; }
-.sf-wrap { width:100%;max-width:500px;opacity:0;transform:translateY(14px);transition:opacity 0.5s ease,transform 0.5s ease; }
-.sf-wrap.entered { opacity:1;transform:translateY(0); }
+/* 🚨 우측 폼 영역 (문제 해결의 핵심!) 🚨 */
+.sv-right { 
+  flex: 1; 
+  background: #0C0B1A; 
+  display: block; /* Flex center를 해제해서 상단 잘림 방지 */
+  padding: 40px 24px; 
+  overflow-y: auto; /* 내용이 길면 정상적으로 스크롤되도록 */
+}
+
+.sf-wrap { 
+  width: 100%;
+  max-width: 500px; 
+  margin: 0 auto; /* 수평 가운데 정렬 */
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.5s ease, transform 0.5s ease; 
+}
+.sf-wrap.entered { opacity: 1; transform: translateY(0); }
 
 .sf-head { margin-bottom:26px; }
 .sf-head h1 { font-size:2rem;font-weight:800;color:#F0EFF8;margin-bottom:8px;letter-spacing:-.03em; }
@@ -201,18 +304,9 @@ const handleSignup = async () => {
 .sf-head a { color:#C4B5FD;font-weight:500;text-decoration:none; }
 .sf-head a:hover { color:#DDD6FE; }
 
-.sf-social { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px; }
-.sf-soc { display:flex;align-items:center;justify-content:center;gap:9px;padding:12px;border-radius:14px;font-size:13.5px;font-weight:400;cursor:pointer;transition:all 0.22s;font-family:inherit; }
-.sf-soc.google { background:rgba(255,255,255,0.05);border:1px solid rgba(180,160,255,0.14);color:rgba(220,218,240,0.6); }
-.sf-soc.google:hover { border-color:rgba(180,160,255,0.3);background:rgba(180,160,255,0.07);transform:translateY(-1px); }
-.sf-soc.kakao { background:#FEE500;border:none;color:#3C1E1E;font-weight:600; }
-.sf-soc.kakao:hover { background:#FFD700;transform:translateY(-1px);box-shadow:0 4px 20px rgba(254,229,0,0.22); }
-
-.sf-or { display:flex;align-items:center;gap:12px;margin-bottom:20px; }
-.sf-or span { flex:1;height:1px;background:rgba(180,160,255,0.1); }
-.sf-or em { font-size:12px;color:rgba(220,218,240,0.25);white-space:nowrap;font-style:normal;font-weight:300; }
-
-.sf-row { display:grid;grid-template-columns:1fr 1fr;gap:14px; }
+/* 🚨 2단 나누기 여백 버그 수정 🚨 */
+.sf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.sf-row .fg { margin-bottom: 0 !important; } /* 이중 여백 제거 */
 @media (max-width:520px) { .sf-row { grid-template-columns:1fr; } }
 
 .fg { margin-bottom:14px; }
@@ -222,7 +316,11 @@ const handleSignup = async () => {
 .fg-err .fg-box { border-color:rgba(248,113,113,0.35); }
 .fg-ok  .fg-box { border-color:rgba(74,222,128,0.3); }
 .fg-ico { padding:0 12px;color:rgba(220,218,240,0.2);font-size:14.5px;flex-shrink:0; }
-.fg-box input { flex:1;border:none;outline:none;padding:12px 8px 12px 0;font-size:14px;color:#F0EFF8;background:transparent;font-family:inherit;font-weight:400; }
+.fg-box input { flex:1;border:none;outline:none;padding:12px 8px 12px 0;font-size:14px;color:#F0EFF8;background:transparent;font-family:inherit;font-weight:400; width: 100%; }
+
+/* 날짜 입력창 달력 아이콘 색상 보정 */
+.fg-box input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.5; cursor: pointer; }
+
 .fg-box input::placeholder { color:rgba(220,218,240,0.18); }
 .fg-ck { padding-right:12px;color:#4ADE80;font-size:14px; }
 .fg-dup { border:none;background:rgba(180,160,255,0.12);color:#C4B5FD;font-size:11.5px;font-weight:600;padding:0 12px;height:100%;min-height:44px;cursor:pointer;font-family:inherit;border-left:1px solid rgba(180,160,255,0.12);white-space:nowrap;transition:all 0.2s; }
@@ -246,7 +344,7 @@ const handleSignup = async () => {
 .sf-apierr { background:rgba(248,113,113,0.08);color:#F87171;border:1px solid rgba(248,113,113,0.2); }
 .sf-apiok  { background:rgba(74,222,128,0.08);color:#4ADE80;border:1px solid rgba(74,222,128,0.2); }
 
-.sf-submit { width:100%;padding:14.5px;border:none;border-radius:14px;background:linear-gradient(135deg,#9A9BD0,#7879C0,#6667AB);color:#fff;font-size:14.5px;font-weight:600;cursor:pointer;transition:all 0.28s;font-family:inherit;letter-spacing:0.01em;box-shadow:0 0 28px rgba(120,121,192,0.28),inset 0 1px 0 rgba(255,255,255,0.16); }
+.sf-submit { width:100%;padding:14.5px;border:none;border-radius:14px;background:linear-gradient(135deg,#9A9BD0,#7879C0,#6667AB);color:#fff;font-size:14.5px;font-weight:600;cursor:pointer;transition:all 0.28s;font-family:inherit;letter-spacing:0.01em;box-shadow:0 0 28px rgba(120,121,192,0.28),inset 0 1px 0 rgba(255,255,255,0.16); margin-bottom: 40px; }
 .sf-submit:hover:not(:disabled) { transform:translateY(-2px);box-shadow:0 0 48px rgba(120,121,192,0.5),inset 0 1px 0 rgba(255,255,255,0.16); }
 .sf-submit:disabled { opacity:0.5;cursor:not-allowed; }
 .sf-ld { display:flex;align-items:center;justify-content:center;gap:5px; }

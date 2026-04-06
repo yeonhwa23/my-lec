@@ -88,7 +88,6 @@ onUnmounted(() => { window.removeEventListener('resize', handleResize); window.r
 
       <nav class="wh-nav">
         <ul>
-          <!-- 정적 메뉴 -->
           <template v-for="item in staticMenuItems" :key="item.name">
             <li v-if="!item.children" class="wh-li">
               <router-link :to="item.routeName ? { name: item.routeName } : item.path" active-class="active" @click="closeAll">{{ item.name }}</router-link>
@@ -107,14 +106,12 @@ onUnmounted(() => { window.removeEventListener('resize', handleResize); window.r
             </li>
           </template>
 
-          <!-- 워크스페이스 드롭다운 (로그인 시에만) -->
           <li v-if="authStore.isAuthenticated" class="wh-li has-drop" @mouseenter="openMenu('workspace')" @mouseleave="scheduleClose">
             <a href="#" @click.prevent="toggleMobileDropdown('workspace')" :class="{ open: pcOpenKey === 'workspace' }">
               <span>워크스페이스</span>
               <i class="bi bi-chevron-down chev"></i>
             </a>
             <div class="drop ws-drop" :class="{ show: pcOpenKey === 'workspace' }" @mouseenter="cancelClose" @mouseleave="scheduleClose">
-              <!-- 워크스페이스 목록 -->
               <div v-if="workspaceStore.workspaceList.length" class="ws-list">
                 <a
                   v-for="ws in workspaceStore.workspaceList"
@@ -149,13 +146,25 @@ onUnmounted(() => { window.removeEventListener('resize', handleResize); window.r
         </template>
         <template v-else>
           <button class="icon-btn"><i class="bi bi-bell"></i><span class="notif"></span></button>
+          
           <div class="av-wrap dropdown">
-            <button class="av-btn dropdown-toggle" data-bs-toggle="dropdown">
+            <button class="av-btn dropdown-toggle" data-bs-toggle="dropdown" data-bs-offset="0,10">
               <img :src="avatar" class="av-img" /><span class="av-on"></span>
             </button>
             <ul class="av-menu dropdown-menu dropdown-menu-end">
-              <li class="av-head"><span class="av-nm">내 계정</span><span class="av-badge">멤버</span></li>
+              <li class="av-head">
+ 		 <span class="av-nm">{{ authStore.auth?.username || '사용자' }}</span>
+ 		 <span class="av-badge">멤버</span>
+	      </li>
               <li><hr class="av-sep"></li>
+              
+              <li>
+                <router-link to="/mypage" class="av-item" @click="closeAll">
+                  <i class="bi bi-person-circle"></i>마이페이지
+                </router-link>
+              </li>
+              <li><hr class="av-sep"></li>
+              
               <li><router-link to="/album"    class="av-item" @click="closeAll"><i class="bi bi-images"></i>사진첩</router-link></li>
               <li><router-link to="/schedule" class="av-item" @click="closeAll"><i class="bi bi-calendar3"></i>일정관리</router-link></li>
               <li><router-link to="/note"     class="av-item" @click="closeAll"><i class="bi bi-envelope"></i>쪽지함</router-link></li>
@@ -170,7 +179,6 @@ onUnmounted(() => { window.removeEventListener('resize', handleResize); window.r
       </div>
     </div>
 
-    <!-- 모바일 드로어 -->
     <div class="drawer" :class="{ open: isMobileNavActive }">
       <ul>
         <template v-for="item in staticMenuItems" :key="item.name">
@@ -185,7 +193,6 @@ onUnmounted(() => { window.removeEventListener('resize', handleResize); window.r
             </div>
           </li>
         </template>
-        <!-- 모바일 워크스페이스 -->
         <li v-if="authStore.isAuthenticated" class="mob-li">
           <a href="#" @click.prevent="toggleMobileDropdown('workspace')" :class="{ open: mobileOpenKey === 'workspace' }"><span>워크스페이스</span><i class="bi bi-chevron-down chev"></i></a>
           <div v-if="mobileOpenKey === 'workspace'" class="mob-sub">
@@ -201,7 +208,6 @@ onUnmounted(() => { window.removeEventListener('resize', handleResize); window.r
 
   <div v-if="isMobileNavActive" class="overlay" @click="closeAll"></div>
 
-  <!-- 모달 -->
   <WorkspaceCreateModal v-if="showCreateModal" @close="showCreateModal = false" @created="onWorkspaceCreated" />
   <WorkspaceJoinModal   v-if="showJoinModal"   @close="showJoinModal = false"   @joined="onWorkspaceJoined" />
 </template>

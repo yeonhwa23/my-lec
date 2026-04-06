@@ -3,7 +3,7 @@
 
 import http from '../http'
 
-const BASE = '/api/workspaces'
+const BASE = '/workspaces'
 
 const workspaceApi = {
   /**

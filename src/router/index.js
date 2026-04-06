@@ -1,4 +1,3 @@
-
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -28,6 +27,9 @@ const routes = [
   { path: '/notice', name: 'Notice', component: () => import('@/views/customer/NoticeView.vue'), meta: { requiresAuth: true } },
   { path: '/inquiry', name: 'Inquiry', component: () => import('@/views/customer/InquiryView.vue'), meta: { requiresAuth: true } },
 
+  // ✅ 마이페이지 라우터 추가! (member 폴더 안에 생성하신 MypageView.vue 연결)
+  { path: '/mypage', name: 'Mypage', component: () => import('@/views/member/MypageView.vue'), meta: { requiresAuth: true } },
+
   { path: '/album', name: 'Album', component: () => import('@/views/mypage/AlbumView.vue'), meta: { requiresAuth: true } },
   { path: '/schedule', name: 'Schedule', component: () => import('@/views/mypage/ScheduleView.vue'), meta: { requiresAuth: true } },
   { path: '/note', name: 'Note', component: () => import('@/views/mypage/NoteView.vue'), meta: { requiresAuth: true } },
@@ -40,7 +42,7 @@ const routes = [
     meta: { requiresAuth: true },
     children: [
       {
-        path: 'ch/:channelId',
+        path: 'chat/:channelId',
         name: 'channel',
         component: () => import('@/views/channel/ChatView.vue'),
         meta: { requiresAuth: true },
@@ -51,6 +53,11 @@ const routes = [
         component: () => import('@/views/page/PageEditorView.vue'),
         meta: { requiresAuth: true },
       },
+      {
+        path: '/ws/:slug/settings',
+        name: 'workspace-settings',
+        component: () => import('@/views/workspace/WorkspaceSettingsView.vue')
+      }
     ],
   },
 ]

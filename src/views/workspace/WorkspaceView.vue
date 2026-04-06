@@ -1,14 +1,21 @@
-<!-- src/views/workspace/WorkspaceView.vue -->
-<!-- 워크스페이스 메인 레이아웃 (GNB + LNB + Main View 3단 분할) -->
-
 <template>
   <div class="app-layout">
 
-    <!-- 좌측: GNB (워크스페이스 아이콘 목록) -->
     <GNB class="app-layout__gnb" />
 
-    <!-- 중앙: LNB (채널/문서 목록 사이드바) -->
     <aside class="app-layout__lnb">
+      <div class="lnb-header" v-if="workspaceStore.currentWorkspace">
+        <span class="ws-name">{{ workspaceStore.currentWorkspace.wsName }}</span>
+        <button
+          v-if="workspaceStore.currentWorkspace.ownerMemberId === authStore.auth?.memberId"
+          class="btn-settings"
+          @click="router.push({ name: 'workspace-settings', params: { slug: route.params.slug } })"
+          title="워크스페이스 설정"
+        >
+          <i class="bi bi-gear-fill"></i>
+        </button>
+      </div>
+
       <WorkspaceSidebar
         v-if="workspaceStore.currentWorkspace"
         :workspace="workspaceStore.currentWorkspace"
@@ -19,10 +26,8 @@
       </div>
     </aside>
 
-    <!-- 우측: Main View (채팅 or 에디터) -->
     <main class="app-layout__main">
-      <!-- slug에 맞는 워크스페이스를 자동으로 입장 처리 후 하위 라우트 렌더링 -->
-      <RouterView v-if="ready" />
+      <RouterView v-if="ready" class="router-view-fill" />
       <div v-else class="main-loading">불러오는 중...</div>
     </main>
 
@@ -31,42 +36,34 @@
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useWorkspaceStore } from '@/stores/workspaceStore'
-import GNB               from '@/components/layout/GNB.vue'
-import WorkspaceSidebar  from '@/components/workspace/WorkspaceSidebar.vue'
+import { useAuthStore } from '@/stores/authStore'
+
+import GNB              from '@/components/layout/GNB.vue'
+import WorkspaceSidebar from '@/components/workspace/WorkspaceSidebar.vue'
 
 const route          = useRoute()
+const router         = useRouter()
 const workspaceStore = useWorkspaceStore()
+const authStore      = useAuthStore()
 const ready          = ref(false)
 
-/**
- * URL slug 기준으로 워크스페이스 입장 처리
- * 새로고침 또는 직접 URL 접근 시에도 정상 동작
- */
 async function loadWorkspaceBySlug(slug) {
   ready.value = false
   try {
-    // 목록이 아직 없으면 먼저 가져오기
     if (!workspaceStore.workspaceList.length) {
       await workspaceStore.fetchMyWorkspaces()
     }
-    // 목록에서 slug에 해당하는 워크스페이스 찾기
     const ws = workspaceStore.workspaceList.find(w => w.slug === slug)
-    if (ws) {
-      await workspaceStore.setCurrentWorkspace(ws)
-    }
+    if (ws) await workspaceStore.setCurrentWorkspace(ws)
   } finally {
     ready.value = true
   }
 }
 
 onMounted(() => loadWorkspaceBySlug(route.params.slug))
-
-// slug 파라미터가 바뀔 때마다 재입장
-watch(() => route.params.slug, (newSlug) => {
-  if (newSlug) loadWorkspaceBySlug(newSlug)
-})
+watch(() => route.params.slug, (newSlug) => { if (newSlug) loadWorkspaceBySlug(newSlug) })
 </script>
 
 <style scoped>
@@ -76,30 +73,39 @@ watch(() => route.params.slug, (newSlug) => {
   overflow: hidden;
 }
 
-/* GNB: 가장 좁은 영역 (68px 고정) */
 .app-layout__gnb {
   flex: 0 0 68px;
 }
 
-/* LNB: 채널/문서 목록 (240px 고정) */
 .app-layout__lnb {
   flex: 0 0 240px;
   background: #2f3136;
   color: #dcddde;
   overflow-y: auto;
   border-right: 1px solid #202225;
-}
-
-/* Main View: 나머지 전체 */
-.app-layout__main {
-  flex: 1;
-  background: #36393f;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
-.lnb-empty, .main-loading {
+/* ✅ min-height: 0 이 없으면 자식 flex 아이템이 넘쳐도 줄어들지 않아서 채팅 input이 밀려남 */
+.app-layout__main {
+  flex: 1;
+  min-height: 0;      /* ✅ 핵심 */
+  background: #36393f;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ✅ RouterView가 렌더하는 컴포넌트(ChatView 등)가 main 전체를 꽉 채우도록 */
+.router-view-fill {
+  flex: 1;
+  min-height: 0;      /* ✅ 핵심 */
+  overflow: hidden;
+}
+
+.lnb-empty,
+.main-loading {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -107,4 +113,32 @@ watch(() => route.params.slug, (newSlug) => {
   color: #72767d;
   font-size: 14px;
 }
+
+.lnb-header {
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.ws-name {
+  font-weight: 800;
+  font-size: 16px;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-settings {
+  background: none;
+  border: none;
+  color: #b9bbbe;
+  cursor: pointer;
+  font-size: 16px;
+  transition: color 0.2s;
+}
+.btn-settings:hover { color: #fff; }
 </style>
