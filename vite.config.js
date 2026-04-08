@@ -19,6 +19,14 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:9090',
         changeOrigin: true,
+      },
+      '/uploads': {
+        target: 'http://localhost:9090',
+        changeOrigin: true,
+      },
+      '/ws-chat': {
+        target: 'ws://localhost:9090',
+        ws: true,
       }
     }
   }

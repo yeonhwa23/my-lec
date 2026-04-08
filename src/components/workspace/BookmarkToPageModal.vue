@@ -3,31 +3,9 @@
   ========================
   채팅 메시지의 [북마크] 버튼 클릭 시 표시되는 모달.
   워크스페이스 내 페이지 목록을 보여주고, 선택한 페이지에 메시지를 아카이빙한다.
-
-  사용법 (부모 컴포넌트 - 채팅뷰에서):
-  ─────────────────────────────────────
-  <BookmarkToPageModal
-    v-if="bookmarkModal.visible"
-    :message-id="bookmarkModal.messageId"
-    :message-content="bookmarkModal.content"
-    :workspace-id="currentWorkspaceId"
-    @close="bookmarkModal.visible = false"
-    @saved="onBookmarkSaved"
-  />
-  
-  // data:
-  bookmarkModal: { visible: false, messageId: null, content: '' }
-  
-  // 북마크 버튼 클릭 시:
-  openBookmark(msg) {
-    bookmarkModal.messageId = msg.messageId
-    bookmarkModal.content   = msg.content
-    bookmarkModal.visible   = true
-  }
 -->
 <template>
   <Teleport to="body">
-    <!-- 백드롭 -->
     <div class="modal-backdrop" @click.self="$emit('close')">
       <div class="modal" role="dialog" aria-modal="true" aria-label="페이지에 저장">
 
@@ -43,7 +21,7 @@
         <!-- 미리보기 -->
         <div class="message-preview">
           <p class="preview-label">저장할 내용</p>
-          <p class="preview-text">{{ messageContent }}</p>
+          <p class="preview-text">{{ messageContent || '(파일 첨부)' }}</p>
         </div>
 
         <!-- 검색 -->
@@ -71,6 +49,7 @@
               :key="page.pageId"
               class="page-item"
               :class="{ selected: selectedPageId === page.pageId }"
+              :style="{ paddingLeft: `${12 + (page._depth || 0) * 16}px` }"
               @click="selectedPageId = page.pageId"
             >
               <span class="page-icon">{{ page.iconEmoji || '📄' }}</span>
@@ -83,7 +62,18 @@
         <!-- 액션 -->
         <div class="modal-footer">
           <button class="btn-cancel" @click="$emit('close')">취소</button>
+
+          <!-- 저장 성공 후: 페이지 보기 버튼으로 교체 -->
           <button
+            v-if="savedPage"
+            class="btn-goto"
+            @click="goToSavedPage"
+          >
+            📄 페이지 보기
+          </button>
+
+          <button
+            v-else
             class="btn-save"
             :disabled="!selectedPageId || saving"
             @click="doSave"
@@ -105,13 +95,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import http from '@/util/http'
 
 const props = defineProps({
   messageId:      { type: Number, required: true },
-  messageContent: { type: String, required: true },
+  messageContent: { type: String, default: '' },
   workspaceId:    { type: [Number, String], required: true },
 })
 
@@ -125,13 +115,13 @@ const saving         = ref(false)
 const selectedPageId = ref(null)
 const query          = ref('')
 const toast          = ref({ show: false, type: 'success', message: '' })
+const savedPage      = ref(null)   // 저장 성공한 페이지 (푸터 버튼 전환용)
 
 // ── 페이지 목록 (flat) ────────────────────────────────
 const fetchPages = async () => {
   loading.value = true
   try {
     const tree = await http.get(`/workspaces/${props.workspaceId}/pages`) || []
-    // TreeNode 배열을 flat하게 펼침 (선택지로 사용)
     pages.value = flattenTree(tree)
   } catch (e) {
     console.error('페이지 목록 오류:', e)
@@ -154,9 +144,7 @@ function flattenTree(nodes, depth = 0) {
 const filteredPages = computed(() => {
   const q = query.value.trim().toLowerCase()
   if (!q) return pages.value
-  return pages.value.filter(p =>
-    (p.title || '').toLowerCase().includes(q)
-  )
+  return pages.value.filter(p => (p.title || '').toLowerCase().includes(q))
 })
 
 // ── 저장 ─────────────────────────────────────────────
@@ -166,22 +154,16 @@ const doSave = async () => {
   try {
     await http.post(`/pages/${selectedPageId.value}/bookmark`, {
       messageId: props.messageId,
-      content:   props.messageContent,
+      content:   props.messageContent || '(첨부 파일)',   // null 방지
     })
 
-    const saved = pages.value.find(p => p.pageId === selectedPageId.value)
-    showToast('success', `'${saved?.title || '페이지'}'에 저장되었습니다`)
-    emit('saved', { pageId: selectedPageId.value, page: saved })
+    const page = pages.value.find(p => p.pageId === selectedPageId.value)
+    savedPage.value = page   // 푸터 버튼 전환 트리거
+    showToast('success', `'${page?.title || '페이지'}'에 저장되었습니다 ✓`)
+    emit('saved', { pageId: selectedPageId.value, page })
 
-    // 2초 후 모달 닫기
-    setTimeout(() => {
-      emit('close')
-      // 선택적: 저장된 페이지로 이동할지 물어보기
-      if (saved && confirm(`'${saved.title}'으로 이동할까요?`)) {
-        const slug = router.currentRoute.value.params.slug
-        router.push(`/ws/${slug}/page/${saved.pageId}`)
-      }
-    }, 1200)
+    // confirm 없이 2.5초 후 조용히 닫기
+    setTimeout(() => emit('close'), 2500)
 
   } catch (e) {
     const msg = e?.response?.data?.message || '저장에 실패했습니다.'
@@ -195,6 +177,14 @@ const doSave = async () => {
   }
 }
 
+// ── 저장된 페이지로 이동 ──────────────────────────────
+const goToSavedPage = () => {
+  if (!savedPage.value) return
+  const slug = router.currentRoute.value.params.slug
+  router.push(`/ws/${slug}/page/${savedPage.value.pageId}`)
+  emit('close')
+}
+
 // ── 토스트 ────────────────────────────────────────────
 const showToast = (type, message) => {
   toast.value = { show: true, type, message }
@@ -204,7 +194,7 @@ const showToast = (type, message) => {
 // ── 키보드 단축키 ─────────────────────────────────────
 const onKeydown = (e) => {
   if (e.key === 'Escape') emit('close')
-  if (e.key === 'Enter' && selectedPageId.value) doSave()
+  if (e.key === 'Enter' && selectedPageId.value && !savedPage.value) doSave()
 }
 
 onMounted(() => {
@@ -212,14 +202,12 @@ onMounted(() => {
   window.addEventListener('keydown', onKeydown)
 })
 
-import { onBeforeUnmount } from 'vue'
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown)
 })
 </script>
 
 <style scoped>
-/* 백드롭 */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -231,7 +219,6 @@ onBeforeUnmount(() => {
   backdrop-filter: blur(2px);
 }
 
-/* 모달 카드 */
 .modal {
   background: #2f3136;
   border-radius: 8px;
@@ -245,7 +232,6 @@ onBeforeUnmount(() => {
   max-height: 85vh;
 }
 
-/* 헤더 */
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -268,7 +254,6 @@ onBeforeUnmount(() => {
 }
 .btn-close:hover { color: white; background: #36393f; }
 
-/* 미리보기 */
 .message-preview {
   padding: 12px 20px;
   background: #202225;
@@ -295,10 +280,7 @@ onBeforeUnmount(() => {
   line-height: 1.4;
 }
 
-/* 검색 */
-.search-row {
-  padding: 12px 20px 8px;
-}
+.search-row { padding: 12px 20px 8px; }
 .search-input {
   width: 100%;
   background: #40444b;
@@ -313,7 +295,6 @@ onBeforeUnmount(() => {
 .search-input::placeholder { color: #72767d; }
 .search-input:focus { box-shadow: 0 0 0 2px #5865f2; }
 
-/* 리스트 */
 .page-list-wrap {
   flex: 1;
   overflow-y: auto;
@@ -351,10 +332,6 @@ onBeforeUnmount(() => {
 .page-title { flex: 1; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .check      { color: #3ba55c; font-weight: 700; font-size: 14px; flex-shrink: 0; }
 
-/* depth 들여쓰기 (computed style 대신 CSS로) */
-/* depth는 _depth 프로퍼티로 전달받아 style binding으로 처리할 수도 있음 */
-
-/* 푸터 */
 .modal-footer {
   display: flex;
   gap: 8px;
@@ -385,6 +362,20 @@ onBeforeUnmount(() => {
 }
 .btn-save:hover:not(:disabled) { background: #4752c4; }
 .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* 저장 성공 후 "페이지 보기" 버튼 */
+.btn-goto {
+  background: #3ba55c;
+  border: none;
+  color: white;
+  border-radius: 4px;
+  padding: 8px 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+.btn-goto:hover { background: #2d8049; }
 
 /* 토스트 */
 .toast {
